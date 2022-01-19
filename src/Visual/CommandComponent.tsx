@@ -5,7 +5,9 @@ import { ParsedCommandOrSubcommand } from "../Parser/parse";
 const Row = css`
   display: flex;
   align-items: center;
-  gap: 0.5em;
+  gap: 1ch;
+  padding: 1px 5px;
+  margin: 0 -6px;
 `;
 
 const Highlight = css`

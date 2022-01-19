@@ -24,14 +24,18 @@ export default function parse(
   let options: ParsedCommandOrSubcommand["options"] = {};
   let subcommand: ParsedCommandOrSubcommand["subcommand"] = undefined;
 
-  let currentOptionArgsSpecs: ArgSpec[] = [];
-  let currentOptionArgs: string[] | undefined = undefined;
+  let optionState:
+    | {
+        remainingArgSpecs: ArgSpec[];
+        parsedArgs: string[];
+      }
+    | undefined = undefined;
 
   while (restTokens.length > 0) {
-    let token = restTokens.shift();
-    if (currentOptionArgsSpecs.length > 0) {
-      currentOptionArgsSpecs.shift();
-      currentOptionArgs.push(token);
+    let token = restTokens.shift()!;
+    if (optionState && optionState.remainingArgSpecs.length > 0) {
+      optionState.remainingArgSpecs.shift();
+      optionState.parsedArgs.push(token);
     } else if (token[0] === "-") {
       let optionSpec = arrayize(spec.options).find((option) => {
         return arrayize(option.name).includes(token);
@@ -44,19 +48,21 @@ export default function parse(
         break;
       }
 
-      currentOptionArgsSpecs = arrayize(optionSpec.args);
-      currentOptionArgs = [];
+      optionState = {
+        remainingArgSpecs: arrayize(optionSpec.args),
+        parsedArgs: [],
+      };
       options[token] = {
         spec: optionSpec,
-        args: currentOptionArgs,
+        args: optionState.parsedArgs,
       };
     } else {
-      let subcommandSpec = undefined;
-      if (args.length === 0) {
-        subcommandSpec = arrayize(spec.subcommands).find((subcommand) => {
-          return arrayize(subcommand.name).includes(token);
-        });
-      }
+      let subcommandSpec =
+        args.length === 0
+          ? arrayize(spec.subcommands).find((subcommand) => {
+              return arrayize(subcommand.name).includes(token);
+            })
+          : undefined;
       if (subcommandSpec == null) {
         args.push(token);
       } else {
@@ -67,7 +73,15 @@ export default function parse(
   }
 
   return {
-    spec,
+    spec: {
+      ...spec,
+      // Keep the output size manageable by removing unused properties. If we
+      // parse subcommands, args, and options, we'll include their own specs in
+      // their respected parsed fields.
+      subcommands: undefined,
+      args: undefined,
+      options: undefined,
+    },
     name: command,
     args,
     options,

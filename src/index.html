@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>React App</title>
+    <title>Explan This Command</title>
     <style>
       :root {
         --color-highlight: #00000022;
@@ -11,10 +11,23 @@
       }
 
       input,
-      button {
+      button,
+      fieldset {
+        border: max(1px, 0.1em) solid black;
+        border-radius: 0.2em;
         background: unset;
+        box-sizing: border-box;
         color: unset;
         font: unset;
+        width: 100%;
+      }
+
+      details > summary {
+        cursor: pointer;
+      }
+
+      details > summary:active {
+        user-select: none;
       }
 
       @media (prefers-color-scheme: dark) {
