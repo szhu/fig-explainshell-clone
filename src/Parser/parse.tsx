@@ -32,20 +32,113 @@ export default function parse(
   let subcommand: ParsedCommandOrSubcommand["subcommand"] = undefined;
 
   interface ArgState {
-    remainingSpecs: ArgSpec[];
+    specs: ArgSpec[];
+    values: string[];
+    getValueIndexToSpecIndex: (nValues: number) => number[];
+    isVariadic: boolean;
     parsed: ParsedArg[];
-    variadicValues: string[] | undefined;
+    parse(): void;
   }
-  let argState: ArgState = {
-    remainingSpecs: arrayize(spec.args),
-    parsed: [],
-    variadicValues: undefined,
-  };
+
+  function makeArgState(specs: ArgSpec[]): ArgState {
+    /*
+     * Example:
+     * args:   fixedArg1 fixedArg2  |  variadicArgs ...     |  fixedArg3
+     *         0         1          |  2                    |  3
+     * values: input1    input2     |  input3       input4  |  input5
+     *         0         1          |  2            3       |  4
+     *        ----------------------+-----------------------+--------------
+     *          section 1           |  section 2            |  section 3
+     */
+
+    // In the example, there are 2 fixed arg before the variadic arg.
+    let nFixedBefore = specs.findIndex((spec) => spec.isVariadic);
+    // In the example, there is 1 fixed arg after the variadic arg.
+    let nFixedAfter = specs.length - nFixedBefore - 1;
+
+    let isVariadic = nFixedBefore !== -1;
+
+    // In the example, this should output: [0, 1, 2, 2, 3].
+    function getValueIndexToSpecIndex(nValues: number) {
+      let specIndices: number[] = [];
+
+      let tooManyValues = false;
+
+      let specIndex = 0;
+      if (isVariadic) {
+        // Section 1
+        for (; specIndex < nFixedBefore; specIndex++) {
+          specIndices.push(specIndex);
+        }
+      }
+      // Section 2
+      if (isVariadic) {
+        let nVariadic = nValues - nFixedBefore - nFixedAfter;
+        for (let i = 0; i < nVariadic; i++) {
+          specIndices.push(specIndex);
+        }
+        specIndex++;
+      }
+      {
+        // Section 3
+        for (; specIndex < nValues; specIndex++) {
+          if (specIndex >= specs.length) {
+            tooManyValues = true;
+            specIndices.push(specs.length);
+          } else {
+            specIndices.push(specIndex);
+          }
+        }
+      }
+
+      if (tooManyValues) {
+        parsed.push({
+          values: [],
+          error: "Extra args found.",
+        });
+      }
+
+      return specIndices;
+    }
+
+    let parsed: ParsedArg[] = specs.map((spec) => ({
+      spec,
+      values: [],
+    }));
+
+    return {
+      values: [],
+      specs: specs,
+      isVariadic,
+      getValueIndexToSpecIndex,
+      parsed,
+      parse(this: ArgState) {
+        let valueIndexToSpecIndex = this.getValueIndexToSpecIndex(
+          this.values.length,
+        );
+
+        for (let i = 0; i < this.values.length; i++) {
+          let value = this.values[i];
+          let specIndex = valueIndexToSpecIndex[i];
+          let parsed = this.parsed[specIndex];
+          parsed.values.push(value);
+        }
+      },
+    };
+  }
+
+  function valuesRemaining(state: ArgState): number {
+    if (state.isVariadic) return Infinity;
+    return state.specs.length - state.values.length;
+  }
+
+  let argState = makeArgState(arrayize(spec.args));
   let optionState: ArgState | undefined = undefined;
 
   while (restTokens.length > 0) {
     let token = restTokens.shift()!;
-    if (optionState && optionState.remainingSpecs.length === 0) {
+    if (optionState && valuesRemaining(optionState) === 0) {
+      optionState.parse();
       optionState = undefined;
     }
     let activeState = optionState ?? argState;
@@ -57,7 +150,6 @@ export default function parse(
       let optionSpec = arrayize(spec.options).find((option) => {
         return arrayize(option.name).includes(token);
       });
-      console.log(arrayize(spec.options), optionSpec);
 
       if (optionSpec == null) {
         options[token] = {
@@ -67,40 +159,27 @@ export default function parse(
         break;
       }
 
-      optionState = {
-        remainingSpecs: arrayize(optionSpec.args),
-        parsed: [],
-        variadicValues: undefined,
-      };
+      optionState = makeArgState(arrayize(optionSpec.args));
       options[token] = {
         spec: optionSpec,
         args: optionState.parsed,
       };
     } else {
       let subcommandSpec =
-        !optionState && argState.parsed.length === 0
+        !optionState && argState.values.length === 0
           ? arrayize(spec.subcommands).find((subcommand) => {
               return arrayize(subcommand.name).includes(token);
             })
           : undefined;
+      console.log(
+        optionState,
+        argState.parsed,
+        arrayize(spec.subcommands),
+        subcommandSpec,
+      );
+
       if (subcommandSpec == null) {
-        if (activeState.variadicValues != null) {
-          activeState.variadicValues.push(token);
-        } else if (activeState.remainingSpecs.length > 0) {
-          let spec = activeState.remainingSpecs.shift()!;
-          let values = [token];
-          let parsedArg: ParsedArg = {
-            spec,
-            values,
-          };
-          activeState.parsed.push(parsedArg);
-          activeState.variadicValues = spec.isVariadic ? values : undefined;
-        } else {
-          activeState.parsed.push({
-            values: [token],
-            error: `ERROR: Invalid argument ${token}`,
-          });
-        }
+        activeState.values.push(token);
       } else {
         subcommand = parse(subcommandSpec, [token, ...restTokens]);
         break;
@@ -108,6 +187,10 @@ export default function parse(
     }
   }
 
+  if (optionState) {
+    optionState.parse();
+  }
+  argState.parse();
   return {
     spec: {
       ...spec,
