@@ -35,23 +35,45 @@ const SubcommandComponent: React.FC<{
       {Object.entries(props.parsed.options).map(([flag, option]) => {
         return (
           <div
+            key={flag}
             className={css`
               ${Row}
               ${Highlight}
             `}
-            key={flag}
             data-help={option.spec?.description}
           >
             <div>{flag}</div>
             {option.error && <div>{option.error}</div>}
             {option.args.map((arg, i) => (
-              <div key={i}>{arg}</div>
+              <div
+                key={i}
+                className={css`
+                  ${Row}
+                  ${Highlight}
+                `}
+                data-help={arg.spec?.name}
+              >
+                {arg.values.map((value, j) => (
+                  <div key={j}>{value}</div>
+                ))}
+              </div>
             ))}
           </div>
         );
       })}
       {props.parsed.args.map((arg, i) => (
-        <div key={i}>{arg}</div>
+        <div
+          key={i}
+          className={css`
+            ${Row}
+            ${Highlight}
+          `}
+          data-help={arg.spec?.name}
+        >
+          {arg.values.map((value, j) => (
+            <div key={j}>{value}</div>
+          ))}
+        </div>
       ))}
       <SubcommandComponent parsed={props.parsed.subcommand} />
     </div>
