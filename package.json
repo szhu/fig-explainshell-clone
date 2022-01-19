@@ -1,4 +1,5 @@
 {
+  "private": true,
   "source": "src/index.html",
   "devDependencies": {
     "@emotion/css": "^11.7.1",

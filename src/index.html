@@ -4,6 +4,27 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>React App</title>
+    <style>
+      :root {
+        --color-highlight: #00000022;
+        font-size: clamp(8px, 4vw, 25px);
+      }
+
+      input,
+      button {
+        background: unset;
+        color: unset;
+        font: unset;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background-color: #222;
+          color: #fff;
+          --color-highlight: #ffffff22;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
