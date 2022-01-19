@@ -3,8 +3,15 @@ import Spec from "./Spec";
 
 const SpecCache: Record<string, Promise<any>> = {};
 
+// Workaround to get Parcel to not follow import() references. Eventually there
+// should be a way to do it without eval(), see:
 // https://github.com/parcel-bundler/parcel/issues/4148
-const nativeImport: (url: string) => any = eval(`url => import(url)`);
+const nativeImport: (url: string) => any =
+  // Using `window.eval` because using `eval` breaks the production build:
+  //
+  //     TypeError: $parcel$interopDefault is not a function or its return value is not iterable
+  //
+  window.eval(`url => import(url)`);
 
 async function getSpec(cmd: string): Promise<Spec> {
   if (!SpecCache[cmd]) {

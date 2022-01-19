@@ -1,3 +1,4 @@
 /.parcel-cache
+/.vercel
 /dist
 /node_modules
