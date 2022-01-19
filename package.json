@@ -1,0 +1,14 @@
+{
+  "source": "src/index.html",
+  "devDependencies": {
+    "@emotion/css": "^11.7.1",
+    "@types/react": "^17.0.38",
+    "@types/react-dom": "^17.0.11",
+    "parcel": "^2.2.1",
+    "prettier": "2.5.1",
+    "prettier-plugin-organize-imports": "2.3.4",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "typescript": "^4.5.4"
+  }
+}
