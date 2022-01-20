@@ -94,7 +94,7 @@ export default function parse(
       if (tooManyValues) {
         parsed.push({
           values: [],
-          error: "Extra args found.",
+          error: "Extra args, or invalid subcommand",
         });
       }
 
@@ -154,7 +154,7 @@ export default function parse(
       if (optionSpec == null) {
         options[token] = {
           args: [],
-          error: `ERROR: Invalid option ${token}`,
+          error: `Unknown option`,
         };
         break;
       }
@@ -171,12 +171,6 @@ export default function parse(
               return arrayize(subcommand.name).includes(token);
             })
           : undefined;
-      console.log(
-        optionState,
-        argState.parsed,
-        arrayize(spec.subcommands),
-        subcommandSpec,
-      );
 
       if (subcommandSpec == null) {
         activeState.values.push(token);

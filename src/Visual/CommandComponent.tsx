@@ -1,4 +1,4 @@
-import { css } from "@emotion/css";
+import { css, cx } from "@emotion/css";
 import React from "react";
 import { ParsedCommandOrSubcommand } from "../Parser/parse";
 
@@ -19,6 +19,10 @@ const Highlight = css`
   }
 `;
 
+const Help = css`
+  cursor: help;
+`;
+
 const SubcommandComponent: React.FC<{
   parsed: ParsedCommandOrSubcommand | undefined;
 }> = (props) => {
@@ -26,35 +30,28 @@ const SubcommandComponent: React.FC<{
 
   return (
     <div
-      className={css`
-        ${Row}
-        ${Highlight}
-      `}
+      className={cx(Row, Highlight, Help)}
+      data-help={props.parsed.spec.description ?? ""}
     >
-      <div data-help={props.parsed.spec.description}>{props.parsed.name}</div>
+      <div>{props.parsed.name}</div>
       {Object.entries(props.parsed.options).map(([flag, option]) => {
         return (
           <div
             key={flag}
-            className={css`
-              ${Row}
-              ${Highlight}
-            `}
-            data-help={option.spec?.description}
+            className={cx(Row, Highlight, Help)}
+            data-help={option.spec?.description ?? ""}
           >
+            {option.error && <div>(Error: {option.error})</div>}
             <div>{flag}</div>
-            {option.error && <div>{option.error}</div>}
             {option.args.map(
               (arg, i) =>
                 arg.values.length > 0 && (
                   <div
                     key={i}
-                    className={css`
-                      ${Row}
-                      ${Highlight}
-                    `}
-                    data-help={arg.spec?.name}
+                    className={cx(Row, Highlight, Help)}
+                    data-help={arg.spec?.name ?? ""}
                   >
+                    {arg.error && <div>(Error: {arg.error})</div>}
                     {arg.values.map((value, j) => (
                       <div key={j}>{value}</div>
                     ))}
@@ -69,12 +66,10 @@ const SubcommandComponent: React.FC<{
           arg.values.length > 0 && (
             <div
               key={i}
-              className={css`
-                ${Row}
-                ${Highlight}
-              `}
-              data-help={arg.spec?.name}
+              className={cx(Row, Highlight, Help)}
+              data-help={arg.spec?.name ?? ""}
             >
+              {arg.error && <div>(Error: {arg.error})</div>}
               {arg.values.map((value, j) => (
                 <div key={j}>{value}</div>
               ))}

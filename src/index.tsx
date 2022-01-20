@@ -39,11 +39,37 @@ function App() {
         <legend>Input</legend>
         Explain this shell command to me:
         <br />
-        <input
-          type="text"
-          value={cmd}
-          onChange={(e) => setCmd(e.target.value)}
-        />
+        <div>
+          <input
+            type="text"
+            value={cmd}
+            onChange={(e) => setCmd(e.target.value)}
+          />
+        </div>
+        <br />
+        <p>For example, click to try these commands:</p>
+        <ul>
+          {[
+            //
+            "mv -f file1 file2 dest",
+            "git push origin main --force",
+            "git reset --hard HEAD",
+            "git diff --name-only --diff-filter=A --cached abc1234",
+            "git way too many args",
+            "brew install --cask some-app",
+            "npm i -g npm@latest",
+          ].map((exampleCmd, i) => (
+            <li
+              key={i}
+              onClick={(e) => setCmd(exampleCmd)}
+              className={css`
+                cursor: pointer;
+              `}
+            >
+              {exampleCmd}
+            </li>
+          ))}
+        </ul>
       </fieldset>
 
       <fieldset>
@@ -70,10 +96,10 @@ function App() {
           `}
         >
           {parsed ? (
-            helpText ? (
-              <>Explanation: {helpText}</>
+            helpText == null ? (
+              <>Hover over the parts of the command to see what they mean.</>
             ) : (
-              <>Hover over the parts of the command for help.</>
+              <>Explanation: {helpText || <>(No explanation provided.)</>}</>
             )
           ) : (
             <>Type a command above to see it explained.</>
