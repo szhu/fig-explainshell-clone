@@ -15,9 +15,13 @@ function App() {
   const [cmd, setCmd] = useState<string>("");
   let tokens = tokenize(cmd);
   const [spec, state] = useSpec(tokens[0]);
-  const [parsed, setParsed] = useState<ParsedCommandOrSubcommand>();
+  let [parsed, setParsed] = useState<ParsedCommandOrSubcommand>();
   const [error, setError] = useState<string>();
   const [helpText, setHelpText] = useState<string | undefined>();
+
+  if (state === "error") {
+    parsed = undefined;
+  }
 
   useEffect(() => {
     if (spec) {
@@ -47,29 +51,49 @@ function App() {
           />
         </div>
         <br />
-        <p>For example, click to try these commands:</p>
-        <ul>
-          {[
-            //
-            "mv -f file1 file2 dest",
-            "git push origin main --force",
-            "git reset --hard HEAD",
-            "git diff --name-only --diff-filter=A --cached abc1234",
-            "git way too many args",
-            "brew install --cask some-app",
-            "npm i -g npm@latest",
-          ].map((exampleCmd, i) => (
-            <li
-              key={i}
-              onClick={(e) => setCmd(exampleCmd)}
-              className={css`
-                cursor: pointer;
-              `}
-            >
-              {exampleCmd}
-            </li>
-          ))}
-        </ul>
+        <details>
+          <summary>For example, click to try these commands.</summary>
+          <ul
+            className={css`
+              max-height: max(3em, 80vh - 300px);
+              overflow-y: auto;
+            `}
+          >
+            {[
+              //
+              "mv -f file1 file2 dest",
+              "git push origin main --force",
+              "git reset --hard HEAD",
+              "git diff --name-only --diff-filter=A --cached abc1234",
+              "git way too many args",
+              "brew install --cask some-app",
+              "npm i -g npm@latest",
+              `echo "I can use some \\"quotes\\" here, can't I?"`,
+              "grep -E '\\(.*\\)' .",
+              "mv newfile ~/Library/Application\\ Support",
+              "rsync -rlptgoD -zvh backup.tar.gz /tmp/backups",
+              "ls -lh",
+              "ls -hl",
+              `git commit -am "hello world"`,
+              `git commit -vm "hello world"`,
+              "defaults write com.apple.finder QuitMenuItem -bool yes",
+            ].map((exampleCmd, i) => (
+              <li
+                key={i}
+                onClick={(e) => setCmd(exampleCmd)}
+                className={css`
+                  cursor: pointer;
+                `}
+              >
+                {exampleCmd}
+              </li>
+            ))}
+          </ul>
+        </details>
+        <p>
+          Note that some of these examples don't work because autocomplete data
+          is incomplete, but they still parse as correctly as possible.
+        </p>
       </fieldset>
 
       <fieldset>
@@ -78,10 +102,14 @@ function App() {
           onMouseOver={(e) => {
             if (!(e.target instanceof HTMLElement)) return;
 
-            let closest = e.target.closest("[data-help]");
+            let closest = e.target.closest("[data-help-name]");
             if (!(closest instanceof HTMLElement)) return;
 
-            setHelpText(closest.dataset.help);
+            setHelpText(
+              [closest.dataset.helpName, closest.dataset.helpDesc]
+                .join("\n")
+                .trim(),
+            );
           }}
           onMouseLeave={() => {
             setHelpText(undefined);
@@ -92,6 +120,7 @@ function App() {
         {parsed && <br />}
         <div
           className={css`
+            line-height: 1.3em;
             opacity: ${parsed && helpText ? 1 : 0.3};
           `}
         >
@@ -99,7 +128,14 @@ function App() {
             helpText == null ? (
               <>Hover over the parts of the command to see what they mean.</>
             ) : (
-              <>Explanation: {helpText || <>(No explanation provided.)</>}</>
+              <>
+                Explanation:{" "}
+                {helpText ? (
+                  helpText.split("\n").map((line, i) => <p key={i}>{line}</p>)
+                ) : (
+                  <>(No explanation provided.)</>
+                )}
+              </>
             )
           ) : (
             <>Type a command above to see it explained.</>

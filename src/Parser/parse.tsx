@@ -81,7 +81,7 @@ export default function parse(
       }
       {
         // Section 3
-        for (; specIndex < nValues; specIndex++) {
+        for (; specIndices.length < nValues; specIndex++) {
           if (specIndex >= specs.length) {
             tooManyValues = true;
             specIndices.push(specs.length);
@@ -145,25 +145,63 @@ export default function parse(
 
     // Dash-prefixed tokens are options only if we're not in the middle of
     // parsing an option. This is because options can have dash-prefixed args.
-    // For example, `git commit -m -commit-message-with-dashes-`, is valid.
+    // For example, `git commit -m -commit-message-with-dashes-` is valid.
     if (optionState == null && token[0] === "-") {
       let optionSpec = arrayize(spec.options).find((option) => {
         return arrayize(option.name).includes(token);
       });
 
       if (optionSpec == null) {
-        options[token] = {
-          args: [],
-          error: `Unknown option`,
-        };
-        break;
-      }
+        let foundAtLeastOneValidOption = false;
+        let parsedShortOptions: Record<string, ParsedOption> = {};
 
-      optionState = makeArgState(arrayize(optionSpec.args));
-      options[token] = {
-        spec: optionSpec,
-        args: optionState.parsed,
-      };
+        if (token[1] !== "-") {
+          // Decompose into short options.
+          let shortOptions = token
+            .slice(1)
+            .split("")
+            .map((char) => "-" + char);
+
+          for (let shortOption of shortOptions) {
+            let optionSpec = arrayize(spec.options).find((option) => {
+              return arrayize(option.name).includes(shortOption);
+            });
+            if (optionSpec == null) {
+              parsedShortOptions[shortOption] = {
+                args: [],
+                error: `Unknown option`,
+              };
+            } else {
+              let shortOptionState = makeArgState(arrayize(optionSpec.args));
+              parsedShortOptions[shortOption] = {
+                spec: optionSpec,
+                args: shortOptionState.parsed,
+              };
+              foundAtLeastOneValidOption = true;
+            }
+          }
+        }
+
+        if (foundAtLeastOneValidOption) {
+          for (let [shortOption, parsedOption] of Object.entries(
+            parsedShortOptions,
+          )) {
+            options[shortOption] = parsedOption;
+          }
+        } else {
+          options[token] = {
+            args: [],
+            error: `Unknown option`,
+          };
+          break;
+        }
+      } else {
+        optionState = makeArgState(arrayize(optionSpec.args));
+        options[token] = {
+          spec: optionSpec,
+          args: optionState.parsed,
+        };
+      }
     } else {
       let subcommandSpec =
         !optionState && argState.values.length === 0

@@ -3,7 +3,9 @@ import React from "react";
 import { ParsedCommandOrSubcommand } from "../Parser/parse";
 
 const Row = css`
+  line-height: 0.9em;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1ch;
   padding: 1px 5px;
@@ -31,7 +33,8 @@ const SubcommandComponent: React.FC<{
   return (
     <div
       className={cx(Row, Highlight, Help)}
-      data-help={props.parsed.spec.description ?? ""}
+      data-help-name={props.parsed.spec.name ?? ""}
+      data-help-desc={props.parsed.spec.description ?? ""}
     >
       <div>{props.parsed.name}</div>
       {Object.entries(props.parsed.options).map(([flag, option]) => {
@@ -39,7 +42,8 @@ const SubcommandComponent: React.FC<{
           <div
             key={flag}
             className={cx(Row, Highlight, Help)}
-            data-help={option.spec?.description ?? ""}
+            data-help-name={option.spec?.name ?? ""}
+            data-help-desc={option.spec?.description ?? ""}
           >
             {option.error && <div>(Error: {option.error})</div>}
             <div>{flag}</div>
@@ -49,7 +53,8 @@ const SubcommandComponent: React.FC<{
                   <div
                     key={i}
                     className={cx(Row, Highlight, Help)}
-                    data-help={arg.spec?.name ?? ""}
+                    data-help-name={arg.spec?.name ?? ""}
+                    data-help-desc={arg.spec?.description ?? ""}
                   >
                     {arg.error && <div>(Error: {arg.error})</div>}
                     {arg.values.map((value, j) => (
@@ -67,7 +72,8 @@ const SubcommandComponent: React.FC<{
             <div
               key={i}
               className={cx(Row, Highlight, Help)}
-              data-help={arg.spec?.name ?? ""}
+              data-help-name={arg.spec?.name ?? ""}
+              data-help-desc={arg.spec?.description ?? ""}
             >
               {arg.error && <div>(Error: {arg.error})</div>}
               {arg.values.map((value, j) => (
