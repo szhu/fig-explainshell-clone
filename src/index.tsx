@@ -19,7 +19,7 @@ function App() {
   const [error, setError] = useState<string>();
   const [helpText, setHelpText] = useState<string | undefined>();
 
-  if (state === "error") {
+  if (state !== "done") {
     parsed = undefined;
   }
 
